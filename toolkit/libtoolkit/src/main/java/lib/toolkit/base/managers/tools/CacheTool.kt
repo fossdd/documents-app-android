@@ -26,7 +26,7 @@ open class CacheTool(private val context: Context) {
 
     init {
         mMemoryLruCache = LruCache(CACHE_SIZE)
-        mStorageLruCache = DiskLruCache.open(storageCacheDir, BuildConfig.VERSION_CODE,
+        mStorageLruCache = DiskLruCache.open(storageCacheDir, BuildConfig.VERSION_CODE.toInt(),
             CACHE_STORE_COUNT,
             CACHE_STORE_SIZE
         )

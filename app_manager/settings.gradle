@@ -30,3 +30,4 @@ include ':libgdocs'
 
 settings.createProjectDescriptor(settings.rootProject, 'libgslides', file('../../document-android-editors/editors_slides/libgslides'))
 include ':libgslides'
+include ':core'
