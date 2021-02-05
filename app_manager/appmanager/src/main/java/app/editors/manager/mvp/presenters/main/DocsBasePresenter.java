@@ -617,8 +617,13 @@ public abstract class DocsBasePresenter<View extends DocsBaseView> extends MvpPr
             return;
         }
 
-        if (mModelExplorerStack.getCountSelectedItems() > 0 || mItemClicked instanceof Folder) {
+        if (mModelExplorerStack.getCountSelectedItems() > 0) {
             downloadSelected(downloadTo);
+            return;
+        }
+
+        if(mItemClicked instanceof Folder) {
+            bulkDownload(null, new ArrayList<>(Collections.singleton((Folder) mItemClicked)), downloadTo);
             return;
         }
 
@@ -1078,7 +1083,12 @@ public abstract class DocsBasePresenter<View extends DocsBaseView> extends MvpPr
                     entityList.addAll(fileList);
                 }
             }
-            setPlaceholderType(entityList.isEmpty() ? PlaceholderViews.Type.EMPTY : PlaceholderViews.Type.NONE);
+
+            if (mIsFilteringMode) {
+                setPlaceholderType(entityList.isEmpty() ? PlaceholderViews.Type.SEARCH : PlaceholderViews.Type.NONE);
+            } else {
+                setPlaceholderType(entityList.isEmpty() ? PlaceholderViews.Type.EMPTY : PlaceholderViews.Type.NONE);
+            }
             return entityList;
         }
 
