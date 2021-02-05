@@ -44,6 +44,7 @@ import app.editors.manager.managers.tools.PreferenceTool;
 import app.editors.manager.managers.tools.RetrofitTool;
 import app.editors.manager.managers.utils.FirebaseUtils;
 import app.editors.manager.managers.works.DownloadWork;
+import app.editors.manager.managers.works.UploadWork;
 import app.editors.manager.mvp.models.account.Recent;
 import app.editors.manager.mvp.models.base.Entity;
 import app.editors.manager.mvp.models.explorer.Explorer;
@@ -237,9 +238,23 @@ public abstract class DocsBasePresenter<View extends DocsBaseView> extends MvpPr
         return false;
     }
 
-    public boolean sortBy(@NonNull String value) {
+    public boolean sortBy(@NonNull String value, boolean isRepeatedTap) {
         mPreferenceTool.setSortBy(value);
+
+        if(isRepeatedTap) {
+            reverseSortOrder();
+        }
         return refresh();
+    }
+
+    protected void reverseSortOrder() {
+        if(mPreferenceTool.getSortOrder().equals(Api.Parameters.VAL_SORT_ORDER_ASC)) {
+            mPreferenceTool.setSortOrder(Api.Parameters.VAL_SORT_ORDER_DESC);
+            getViewState().onReverseSortOrder(Api.Parameters.VAL_SORT_ORDER_DESC);
+        } else {
+            mPreferenceTool.setSortOrder(Api.Parameters.VAL_SORT_ORDER_ASC);
+            getViewState().onReverseSortOrder(Api.Parameters.VAL_SORT_ORDER_ASC);
+        }
     }
 
     public boolean orderBy(@NonNull String value) {
@@ -762,13 +777,12 @@ public abstract class DocsBasePresenter<View extends DocsBaseView> extends MvpPr
                 return;
             }
 
-            UploadFile uploadFile = new UploadFile();
-            uploadFile.setProgress(0);
-            uploadFile.setUri(uri);
-            uploadFile.setId(uri.getPath());
-            uploadFile.setName(ContentResolverUtils.getName(mContext, uri));
-            uploadFile.setSize(setSize(uri));
-            UploadService.startUploadToMy(uploadFile);
+            final Data workData = new Data.Builder()
+                    .putString(UploadWork.TAG_UPLOAD_FILES, uri.toString())
+                    .putString(UploadWork.ACTION_UPLOAD_MY, UploadWork.ACTION_UPLOAD_MY)
+                    .putString(UploadWork.TAG_FOLDER_ID, null)
+                    .build();
+            startUpload(workData);
         }
     }
 
@@ -790,14 +804,30 @@ public abstract class DocsBasePresenter<View extends DocsBaseView> extends MvpPr
             uploadFiles.add(uploadFile);
         }
         if (!uploadFiles.isEmpty()) {
-            UploadService.startUpload(id, uploadFiles);
-            UploadService.putNewUploadFiles(id, uploadFiles);
+            UploadWork.putNewUploadFiles(id, uploadFiles);
+            for(Uri uri : uriList) {
+                final Data workData = new Data.Builder()
+                        .putString(UploadWork.TAG_UPLOAD_FILES, uri.toString())
+                        .putString(UploadWork.ACTION_UPLOAD_MY, UploadWork.ACTION_UPLOAD)
+                        .putString(UploadWork.TAG_FOLDER_ID, id)
+                        .build();
+                startUpload(workData);
+            }
             if (mModelExplorerStack.last().getItemsCount() == 0) {
                 refresh();
             } else {
                 getViewState().onAddUploadsFile(uploadFiles);
             }
         }
+    }
+
+    private void startUpload(Data data) {
+        final OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(UploadWork.class)
+                .addTag(data.getString(UploadWork.TAG_UPLOAD_FILES))
+                .setInputData(data)
+                .build();
+
+        mDownloadManager.enqueue(request);
     }
 
 
@@ -959,10 +989,10 @@ public abstract class DocsBasePresenter<View extends DocsBaseView> extends MvpPr
                 resetDatesHeaders();
             }
 
-            if (UploadService.getUploadFiles(mModelExplorerStack.getCurrentId()) != null &&
-                    UploadService.getUploadFiles(mModelExplorerStack.getCurrentId()).size() != 0) {
+            if (UploadWork.getUploadFiles(mModelExplorerStack.getCurrentId()) != null &&
+                    UploadWork.getUploadFiles(mModelExplorerStack.getCurrentId()).size() != 0) {
                 entityList.add(new Header(mContext.getString(R.string.upload_manager_progress_title)));
-                entityList.addAll(UploadService.getUploadFiles(mModelExplorerStack.getCurrentId()));
+                entityList.addAll(UploadWork.getUploadFiles(mModelExplorerStack.getCurrentId()));
             }
 
             // Set folders headers
@@ -977,6 +1007,7 @@ public abstract class DocsBasePresenter<View extends DocsBaseView> extends MvpPr
             // Set files headers
             if (!explorer.getFiles().isEmpty() && !mIsFoldersMode) {
                 final String sortBy = mPreferenceTool.getSortBy();
+                final String sortOrder = mPreferenceTool.getSortOrder();
                 final List<File> fileList = explorer.getFiles();
 
                 if (Api.Parameters.VAL_SORT_BY_UPDATED.equals(sortBy)) { // For date sort add times headers
@@ -989,7 +1020,9 @@ public abstract class DocsBasePresenter<View extends DocsBaseView> extends MvpPr
 
                     // Set time headers
                     Collections.sort(fileList, (o1, o2) -> o1.getUpdated().compareTo(o2.getUpdated()));
-                    Collections.reverse(fileList);
+                    if(sortOrder.equals(Api.Parameters.VAL_SORT_ORDER_DESC)) {
+                        Collections.reverse(fileList);
+                    }
 
                     for (File item : fileList) {
                         itemMs = item.getUpdated().getTime();
@@ -1065,7 +1098,7 @@ public abstract class DocsBasePresenter<View extends DocsBaseView> extends MvpPr
         if (!mIsAccessDenied) {
             getViewState().onDocsGet(getListWithHeaders(mModelExplorerStack.last(), true));
         }
-        updateViewsState();
+        refresh();
         updateOperationStack(mModelExplorerStack.getCurrentId());
     }
 

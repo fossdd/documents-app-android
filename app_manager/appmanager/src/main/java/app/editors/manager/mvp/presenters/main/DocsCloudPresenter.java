@@ -19,6 +19,7 @@ import app.editors.manager.managers.receivers.DownloadReceiver;
 import app.editors.manager.managers.receivers.UploadReceiver;
 import app.editors.manager.managers.services.UploadService;
 import app.editors.manager.managers.utils.FirebaseUtils;
+import app.editors.manager.managers.works.UploadWork;
 import app.editors.manager.mvp.models.account.AccountsSqlData;
 import app.editors.manager.mvp.models.explorer.Explorer;
 import app.editors.manager.mvp.models.explorer.File;
@@ -29,6 +30,7 @@ import app.editors.manager.mvp.models.models.ModelExplorerStack;
 import app.editors.manager.mvp.models.request.RequestCreate;
 import app.editors.manager.mvp.models.request.RequestDeleteShare;
 import app.editors.manager.mvp.models.request.RequestExternal;
+import app.editors.manager.mvp.models.request.RequestFavorites;
 import app.editors.manager.mvp.models.response.ResponseFiles;
 import app.editors.manager.mvp.views.main.DocsCloudView;
 import app.editors.manager.ui.dialogs.ContextBottomDialog;
@@ -251,6 +253,7 @@ public class DocsCloudPresenter extends DocsBasePresenter<DocsCloudView>
         state.mIsDeleteShare = isShareSection();
         state.mIsWebDav = false;
         state.mIsTrash = isTrash;
+        state.mIsFavorite = isClickedItemFavorite();
         if (!isClickedItemFile()) {
             state.mIconResId = R.drawable.ic_type_folder;
         } else {
@@ -302,9 +305,9 @@ public class DocsCloudPresenter extends DocsBasePresenter<DocsCloudView>
     }
 
     @Override
-    public void onUploadError(@Nullable String path, String info, UploadFile file) {
+    public void onUploadError(@Nullable String path, String info, String file) {
         getViewState().onSnackBar(info);
-        getViewState().onDeleteUploadFile(file.getId());
+        //getViewState().onDeleteUploadFile(file);
     }
 
     @Override
@@ -333,7 +336,7 @@ public class DocsCloudPresenter extends DocsBasePresenter<DocsCloudView>
     public void onUploadCanceled(String path, String info, String id) {
         getViewState().onSnackBar(info);
         getViewState().onDeleteUploadFile(id);
-        if (UploadService.getUploadFiles(mModelExplorerStack.getCurrentId()).isEmpty()) {
+        if (UploadWork.getUploadFiles(mModelExplorerStack.getCurrentId()).isEmpty()) {
             getViewState().onRemoveUploadHead();
             getListWithHeaders(mModelExplorerStack.last(), true);
         }
@@ -410,6 +413,35 @@ public class DocsCloudPresenter extends DocsBasePresenter<DocsCloudView>
                         }
                     }, this::fetchError));
         }
+    }
+
+    public void addToFavorite() {
+        final RequestFavorites requestFavorites = new RequestFavorites();
+        requestFavorites.setFileIds(new ArrayList<String>(Collections.singletonList(mItemClicked.getId())));
+        mDisposable.add(mFileProvider.addToFavorites(requestFavorites)
+        .subscribe(response -> {
+            mItemClicked.setFavorite(!mItemClicked.getFavorite());
+            getViewState().onSnackBar(mContext.getString(R.string.operation_add_to_favorites));
+        }, this::fetchError));
+    }
+
+    public void deleteFromFavorite() {
+        final RequestFavorites requestFavorites = new RequestFavorites();
+        requestFavorites.setFileIds(new ArrayList<String>(Collections.singletonList(mItemClicked.getId())));
+        mDisposable.add(mFileProvider.deleteFromFavorites(requestFavorites)
+        .subscribe(response -> {
+            mItemClicked.setFavorite(!mItemClicked.getFavorite());
+            getViewState().onRemoveItemFromFavorites();
+            getViewState().onSnackBar(mContext.getString(R.string.operation_remove_from_favorites));
+        }, this::fetchError));
+    }
+
+
+    public void removeFromFavorites() {
+        if (mItemClicked != null) {
+            mModelExplorerStack.removeItemById(mItemClicked.getId());
+        }
+        getViewState().onDocsGet(getListWithHeaders(mModelExplorerStack.last(), true));
     }
 
     public void removeShareContext() {
@@ -596,6 +628,10 @@ public class DocsCloudPresenter extends DocsBasePresenter<DocsCloudView>
 
     private boolean isClickedItemShared() {
         return mItemClicked != null && mItemClicked.getShared();
+    }
+
+    private boolean isClickedItemFavorite() {
+        return mItemClicked != null && mItemClicked.getFavorite();
     }
 
     private boolean isItemOwner() {
