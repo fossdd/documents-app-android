@@ -4,6 +4,7 @@ import app.manager.core.network.Api
 import okhttp3.Interceptor
 import okhttp3.Response
 import java.io.IOException
+import kotlin.jvm.Throws
 
 class BaseInterceptor : Interceptor {
 

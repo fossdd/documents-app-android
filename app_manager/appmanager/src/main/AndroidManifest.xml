@@ -17,7 +17,7 @@
     <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-<!--    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>-->
+    <!--    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>-->
     <uses-permission android:name="${permissionId}.permission.WRITE" />
     <uses-permission android:name="${permissionId}.permission.READ" />
 
@@ -168,12 +168,13 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="app.editors.manager.ui.activities.main.MainActivity" />
         </activity>
-        <activity android:name=".ui.activities.login.NextCloudLoginActivity"
+        <activity
+            android:name=".ui.activities.login.NextCloudLoginActivity"
             android:alwaysRetainTaskState="true"
             android:configChanges="orientation|screenSize|smallestScreenSize|density|screenLayout|uiMode|keyboard|keyboardHidden|navigation|locale|layoutDirection"
             android:hardwareAccelerated="true"
             android:launchMode="singleTask"
-            android:theme="@style/WebViewerTheme"/>
+            android:theme="@style/WebViewerTheme" />
         <activity
             android:name=".ui.activities.main.MediaActivity"
             android:alwaysRetainTaskState="true"
@@ -231,16 +232,17 @@
 
         <service
             android:name=".managers.services.DownloadService"
-            android:enabled="true" /> <!-- <service -->
-        <!-- android:name=".managers.services.AuthenticatorService" -->
-        <!-- android:exported="false"> -->
-        <!-- <intent-filter> -->
-        <!-- <action android:name="android.accounts.AccountAuthenticator"/> -->
-        <!-- </intent-filter> -->
-        <!-- <meta-data -->
-        <!-- android:name="android.accounts.AccountAuthenticator" -->
-        <!-- android:resource="@xml/authenticator"/> -->
-        <!-- </service> -->
+            android:enabled="true" />
+        <service
+            android:name="app.manager.core.accounts.AuthenticatorService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/authenticator" />
+        </service>
         <service
             android:name=".managers.services.UploadService"
             android:enabled="true"

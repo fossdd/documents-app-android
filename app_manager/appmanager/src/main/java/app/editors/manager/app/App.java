@@ -25,6 +25,9 @@ import app.editors.manager.di.component.AppComponent;
 import app.editors.manager.di.component.DaggerAppComponent;
 import app.editors.manager.di.module.AppModule;
 import app.editors.manager.managers.utils.Constants;
+import app.manager.core.di.AccountsComponent;
+import app.manager.core.di.DaggerAccountsComponent;
+import app.manager.core.di.module.ContextModule;
 
 
 public class App extends Application {
@@ -36,6 +39,7 @@ public class App extends Application {
     private boolean isAnalyticEnable = true;
 
     private AppComponent mAppComponent;
+    private AccountsComponent mAccountComponent;
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -110,6 +114,11 @@ public class App extends Application {
         mAppComponent = DaggerAppComponent.builder()
                 .appModule(new AppModule(this))
                 .build();
+
+        mAccountComponent = DaggerAccountsComponent
+                .builder()
+                .contextModule(new ContextModule(this))
+                .build();
     }
 
     private void initTwitter() {
@@ -159,5 +168,9 @@ public class App extends Application {
 
     public AppComponent getAppComponent() {
         return mAppComponent;
+    }
+
+    public AccountsComponent getAccountComponent() {
+        return mAccountComponent;
     }
 }

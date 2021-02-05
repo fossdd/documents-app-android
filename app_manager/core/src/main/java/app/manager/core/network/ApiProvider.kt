@@ -1,6 +1,8 @@
 package app.manager.core.network
 
+import app.manager.core.network.models.request.RequestSignIn
 import retrofit2.HttpException
+import java.net.CacheRequest
 
 sealed class ApiResponse {
     class Success(val response: Any) : ApiResponse()
@@ -19,5 +21,7 @@ interface ApiProvider {
     suspend fun capability(): ApiResponse
 
     suspend fun getUserInfo(): ApiResponse
+
+    suspend fun signIn(request: RequestSignIn): ApiResponse
 
 }

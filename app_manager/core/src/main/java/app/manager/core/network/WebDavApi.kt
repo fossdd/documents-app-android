@@ -27,8 +27,8 @@ interface WebDavApi {
 
     }
 
-    fun getApi(baseUrl: String): WebDavApi {
-        var baseUrl = baseUrl
+    fun getApi(url: String): WebDavApi {
+        var baseUrl = url
         if (!baseUrl.endsWith("/")) {
             baseUrl = "$baseUrl/"
         }

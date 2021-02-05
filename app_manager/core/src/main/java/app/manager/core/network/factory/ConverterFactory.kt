@@ -38,7 +38,7 @@ class ConverterFactory : Converter.Factory() {
         type: Type,
         parameterAnnotations: Array<Annotation>,
         methodAnnotations: Array<Annotation>,
-        retrofit: Retrofit?
+        retrofit: Retrofit
     ): Converter<*, RequestBody?>? {
         for (annotation in methodAnnotations) {
             if (annotation.annotationClass == Xml::class.java) {
